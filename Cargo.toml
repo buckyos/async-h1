@@ -1,9 +1,9 @@
 [package]
-name = "async-h1"
+name = "cyfs-async-h1"
 version = "2.3.3"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/http-rs/async-h1"
-documentation = "https://docs.rs/async-h1"
+repository = "https://github.com/buckyos/async-h1"
+documentation = "https://docs.rs/cyfs-async-h1"
 description = "Asynchronous HTTP 1.1 parser."
 keywords = ["async", "http", "stream", "parser", "http1"]
 categories = [
