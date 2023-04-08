@@ -66,7 +66,20 @@ where
 
     let mut res = Response::new(StatusCode::try_from(code)?);
     for header in httparse_res.headers.iter() {
-        res.append_header(header.name, std::str::from_utf8(header.value)?);
+        let value = std::str::from_utf8(header.value)?;
+        use http_types::headers::ToHeaderValues;
+        match value.to_header_values() {
+            Ok(headers) => {
+                for item in headers {
+                    res.append_header(header.name, item);
+                }
+            }
+            Err(e) => {
+                log::warn!("got non ascii header: {} -- {}, {}", header.name, value, e);
+                let value = percent_encoding::utf8_percent_encode(value, percent_encoding::NON_ALPHANUMERIC).to_string();
+                res.append_header(header.name, value);
+            }
+        }
     }
 
     if res.header(DATE).is_none() {

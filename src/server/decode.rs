@@ -6,7 +6,7 @@ use async_dup::{Arc, Mutex};
 use async_std::io::{BufReader, Read, Write};
 use async_std::{prelude::*, task};
 use http_types::content::ContentLength;
-use http_types::headers::{EXPECT, TRANSFER_ENCODING};
+use http_types::headers::{EXPECT, TRANSFER_ENCODING, ToHeaderValues};
 use http_types::{ensure, ensure_eq, format_err};
 use http_types::{Body, Method, Request, Url};
 
@@ -80,7 +80,19 @@ where
     req.set_version(Some(http_types::Version::Http1_1));
 
     for header in httparse_req.headers.iter() {
-        req.append_header(header.name, std::str::from_utf8(header.value)?);
+        let value = std::str::from_utf8(header.value)?;
+        match value.to_header_values() {
+            Ok(headers) => {
+                for item in headers {
+                    req.append_header(header.name, item);
+                }
+            }
+            Err(e) => {
+                log::warn!("got non ascii header: {} -- {}, {}", header.name, value, e);
+                let value = percent_encoding::utf8_percent_encode(value, percent_encoding::NON_ALPHANUMERIC).to_string();
+                req.append_header(header.name, value);
+            }
+        }
     }
 
     let content_length = ContentLength::from_headers(&req)?;
